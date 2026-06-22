@@ -3,22 +3,25 @@
     "step": {
       "user": {
         "title": "Set up Lux Analytics",
-        "description": "{discovered} illuminance sensors were auto-discovered.",
+        "description": "{discovered} illuminance sensors found. Pick one and optionally enter a label (e.g. 'Garden'). Entities will get the ID `{example_id}`.",
         "data": {
-          "auto_discover": "Auto-discover sensors",
-          "sensors": "Manually select sensors",
+          "source_sensor": "Illuminance sensor",
+          "sensor_label": "Label (optional, e.g. Garden)",
           "bright_threshold": "Bright-hours threshold (lx)",
           "update_interval": "Update interval (seconds)"
         }
       }
+    },
+    "abort": {
+      "already_configured": "This sensor is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Configure Lux Analytics",
+        "description": "The source sensor cannot be changed. Delete and re-add the integration to change it.",
         "data": {
-          "sensors": "Select sensors",
           "bright_threshold": "Bright-hours threshold (lx)",
           "update_interval": "Update interval (seconds)"
         }

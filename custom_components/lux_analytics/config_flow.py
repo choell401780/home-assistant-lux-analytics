@@ -8,71 +8,79 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_AUTO_DISCOVER,
     CONF_BRIGHT_THRESHOLD,
-    CONF_SENSORS,
+    CONF_SENSOR_LABEL,
+    CONF_SOURCE_SENSOR,
     CONF_UPDATE_INTERVAL,
-    DEFAULT_AUTO_DISCOVER,
     DEFAULT_BRIGHT_THRESHOLD,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
+    build_entity_id,
 )
-from .coordinator import LuxAnalyticsCoordinator
+from .coordinator import discover_illuminance_sensors
 
 
 class LuxAnalyticsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle the initial configuration."""
+    """Handle initial configuration: pick one source sensor + optional label."""
 
     VERSION = 1
 
-    def __init__(self) -> None:
-        self._discovered_sensors: list[str] = []
-
     async def async_step_user(self, user_input=None):
-        """First step: auto-discover or pick sensors."""
-        temp_coordinator = LuxAnalyticsCoordinator(self.hass, [])
-        self._discovered_sensors = temp_coordinator.discover_illuminance_sensors()
+        discovered = discover_illuminance_sensors(self.hass)
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            auto_discover = user_input.get(CONF_AUTO_DISCOVER, DEFAULT_AUTO_DISCOVER)
-            if auto_discover:
-                sensors = self._discovered_sensors
-            else:
-                sensors = user_input.get(CONF_SENSORS, [])
+            source = user_input[CONF_SOURCE_SENSOR]
+            label = user_input.get(CONF_SENSOR_LABEL, "").strip()
+
+            # Prevent duplicate entries for the same source sensor
+            await self.async_set_unique_id(f"{DOMAIN}_{source}")
+            self._abort_if_unique_id_configured()
+
+            title = f"Lux Analytics – {label}" if label else f"Lux Analytics ({source.split('.')[-1]})"
 
             return self.async_create_entry(
-                title="Lux Analytics",
+                title=title,
                 data={
-                    CONF_SENSORS: sensors,
-                    CONF_AUTO_DISCOVER: auto_discover,
+                    CONF_SOURCE_SENSOR: source,
+                    CONF_SENSOR_LABEL: label,
                     CONF_BRIGHT_THRESHOLD: user_input.get(CONF_BRIGHT_THRESHOLD, DEFAULT_BRIGHT_THRESHOLD),
                     CONF_UPDATE_INTERVAL: user_input.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
                 },
             )
 
         sensor_options = [
-            selector.SelectOptionDict(value=s, label=s)
-            for s in self._discovered_sensors
+            selector.SelectOptionDict(value=s, label=s) for s in discovered
         ]
 
-        schema = vol.Schema({
-            vol.Optional(CONF_AUTO_DISCOVER, default=DEFAULT_AUTO_DISCOVER): bool,
-            vol.Optional(CONF_SENSORS, default=[]): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=sensor_options,
-                    multiple=True,
-                    mode=selector.SelectSelectorMode.LIST,
-                )
-            ),
-            vol.Optional(CONF_BRIGHT_THRESHOLD, default=DEFAULT_BRIGHT_THRESHOLD): int,
-            vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): int,
-        })
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_SOURCE_SENSOR): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=sensor_options,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                        custom_value=True,
+                    )
+                ),
+                vol.Optional(CONF_SENSOR_LABEL, default=""): selector.TextSelector(
+                    selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
+                ),
+                vol.Optional(CONF_BRIGHT_THRESHOLD, default=DEFAULT_BRIGHT_THRESHOLD): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=0, max=200000, step=100, mode=selector.NumberSelectorMode.BOX)
+                ),
+                vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=60, max=3600, step=60, mode=selector.NumberSelectorMode.BOX)
+                ),
+            }
+        )
 
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
+            errors=errors,
             description_placeholders={
-                "discovered": str(len(self._discovered_sensors)),
+                "discovered": str(len(discovered)),
+                "example_id": build_entity_id("current"),
             },
         )
 
@@ -83,7 +91,7 @@ class LuxAnalyticsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class LuxAnalyticsOptionsFlow(config_entries.OptionsFlow):
-    """Allow reconfiguration of sensors and thresholds."""
+    """Reconfigure thresholds and interval (source sensor is read-only)."""
 
     def __init__(self, config_entry) -> None:
         self.config_entry = config_entry
@@ -92,26 +100,24 @@ class LuxAnalyticsOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        temp_coordinator = LuxAnalyticsCoordinator(self.hass, [])
-        discovered = temp_coordinator.discover_illuminance_sensors()
-        sensor_options = [
-            selector.SelectOptionDict(value=s, label=s) for s in discovered
-        ]
+        current_threshold = self.config_entry.options.get(
+            CONF_BRIGHT_THRESHOLD,
+            self.config_entry.data.get(CONF_BRIGHT_THRESHOLD, DEFAULT_BRIGHT_THRESHOLD),
+        )
+        current_interval = self.config_entry.options.get(
+            CONF_UPDATE_INTERVAL,
+            self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
+        )
 
-        current_sensors = self.config_entry.data.get(CONF_SENSORS, [])
-        current_threshold = self.config_entry.data.get(CONF_BRIGHT_THRESHOLD, DEFAULT_BRIGHT_THRESHOLD)
-        current_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
-
-        schema = vol.Schema({
-            vol.Optional(CONF_SENSORS, default=current_sensors): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=sensor_options,
-                    multiple=True,
-                    mode=selector.SelectSelectorMode.LIST,
-                )
-            ),
-            vol.Optional(CONF_BRIGHT_THRESHOLD, default=current_threshold): int,
-            vol.Optional(CONF_UPDATE_INTERVAL, default=current_interval): int,
-        })
+        schema = vol.Schema(
+            {
+                vol.Optional(CONF_BRIGHT_THRESHOLD, default=current_threshold): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=0, max=200000, step=100, mode=selector.NumberSelectorMode.BOX)
+                ),
+                vol.Optional(CONF_UPDATE_INTERVAL, default=current_interval): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=60, max=3600, step=60, mode=selector.NumberSelectorMode.BOX)
+                ),
+            }
+        )
 
         return self.async_show_form(step_id="init", data_schema=schema)

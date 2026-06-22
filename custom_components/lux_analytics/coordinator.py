@@ -36,99 +36,85 @@ def classify_brightness(lux: float) -> str:
 
 def calculate_sun_index(lux: float) -> float:
     """Normalize lux value to a 0-100 sun index."""
-    max_lux = 100000.0
-    return min(round((lux / max_lux) * 100, 1), 100.0)
+    return min(round((lux / 100000.0) * 100, 1), 100.0)
+
+
+def discover_illuminance_sensors(hass: HomeAssistant) -> list[str]:
+    """Return entity_ids of all illuminance sensors found in HA states."""
+    found: list[str] = []
+    for state in hass.states.async_all("sensor"):
+        attrs = state.attributes
+        device_class = attrs.get("device_class", "")
+        unit = attrs.get("unit_of_measurement", "")
+        entity_id = state.entity_id
+
+        if device_class in ILLUMINANCE_DEVICE_CLASSES:
+            found.append(entity_id)
+            continue
+        if unit.lower() in ILLUMINANCE_UNITS:
+            found.append(entity_id)
+            continue
+        if any(kw in entity_id.lower() for kw in ILLUMINANCE_KEYWORDS):
+            found.append(entity_id)
+    return list(dict.fromkeys(found))
 
 
 class LuxAnalyticsCoordinator(DataUpdateCoordinator):
     """Coordinator fetching lux statistics from HA recorder.
 
-    Update notifications are handled natively by HACS — no custom
-    GitHub-API polling needed here.
+    Update notifications are handled natively by HACS — no GitHub polling.
+    One coordinator instance manages a single source sensor.
     """
 
     def __init__(
         self,
         hass: HomeAssistant,
-        sensor_ids: list[str],
+        source_entity_id: str,
         bright_threshold: int = DEFAULT_BRIGHT_THRESHOLD,
         update_interval: int = DEFAULT_UPDATE_INTERVAL,
     ) -> None:
-        self.sensor_ids = sensor_ids
+        self.source_entity_id = source_entity_id
         self.bright_threshold = bright_threshold
 
         super().__init__(
             hass,
             _LOGGER,
-            name=DOMAIN,
+            name=f"{DOMAIN}_{source_entity_id}",
             update_interval=timedelta(seconds=update_interval),
         )
-
-    # ------------------------------------------------------------------
-    # Sensor discovery
-    # ------------------------------------------------------------------
-
-    def discover_illuminance_sensors(self) -> list[str]:
-        """Return entity_ids of all illuminance sensors found in HA."""
-        found: list[str] = []
-        for state in self.hass.states.async_all("sensor"):
-            attrs = state.attributes
-            device_class = attrs.get("device_class", "")
-            unit = attrs.get("unit_of_measurement", "")
-            entity_id = state.entity_id
-
-            if device_class in ILLUMINANCE_DEVICE_CLASSES:
-                found.append(entity_id)
-                continue
-            if unit.lower() in ILLUMINANCE_UNITS:
-                found.append(entity_id)
-                continue
-            if any(kw in entity_id.lower() for kw in ILLUMINANCE_KEYWORDS):
-                found.append(entity_id)
-        return list(dict.fromkeys(found))
 
     # ------------------------------------------------------------------
     # Main update
     # ------------------------------------------------------------------
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch statistics for all configured sensors."""
-        data: dict[str, Any] = {}
-
-        for entity_id in self.sensor_ids:
-            try:
-                data[entity_id] = await self._fetch_sensor_data(entity_id)
-            except Exception as exc:  # noqa: BLE001
-                _LOGGER.warning("Failed to fetch data for %s: %s", entity_id, exc)
-                data[entity_id] = self._empty_sensor_data()
-
-        return data
+        """Fetch statistics for the configured source sensor."""
+        try:
+            return await self._fetch_sensor_data(self.source_entity_id)
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning("Failed to fetch data for %s: %s", self.source_entity_id, exc)
+            return self._empty_sensor_data()
 
     async def _fetch_sensor_data(self, entity_id: str) -> dict[str, Any]:
-        """Build statistics dict for one sensor."""
+        """Build statistics dict for the sensor."""
         now = dt_util.now()
         day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = day_start - timedelta(days=now.weekday())
         month_start = day_start.replace(day=1)
-        h24_start = now - timedelta(hours=24)
-        d7_start = now - timedelta(days=7)
-        d30_start = now - timedelta(days=30)
 
         current_lux = self._get_current_lux(entity_id)
 
         day_vals   = await self._get_history_values(entity_id, day_start, now)
         week_vals  = await self._get_history_values(entity_id, week_start, now)
         month_vals = await self._get_history_values(entity_id, month_start, now)
-        h24_vals   = await self._get_history_values(entity_id, h24_start, now)
-        d7_vals    = await self._get_history_values(entity_id, d7_start, now)
-        d30_vals   = await self._get_history_values(entity_id, d30_start, now)
-
-        trend = self._calculate_trend(h24_vals, current_lux)
+        h24_vals   = await self._get_history_values(entity_id, now - timedelta(hours=24), now)
+        d7_vals    = await self._get_history_values(entity_id, now - timedelta(days=7), now)
+        d30_vals   = await self._get_history_values(entity_id, now - timedelta(days=30), now)
 
         return {
             "current":            current_lux,
             "status":             classify_brightness(current_lux) if current_lux is not None else "Unbekannt",
-            "trend":              trend,
+            "trend":              self._calculate_trend(h24_vals, current_lux),
             "sun_index":          calculate_sun_index(current_lux) if current_lux is not None else 0.0,
             "day_min":            self._safe_min(day_vals),
             "day_max":            self._safe_max(day_vals),
@@ -203,14 +189,15 @@ class LuxAnalyticsCoordinator(DataUpdateCoordinator):
         """Estimate hours above threshold (assuming ~1 min per sample)."""
         if not values:
             return 0.0
-        bright = sum(1 for v in values if v >= threshold)
-        return round(bright / 60, 2)
+        return round(sum(1 for v in values if v >= threshold) / 60, 2)
 
     @staticmethod
     def _calculate_trend(recent_values: list[float], current: float | None) -> str:
         if current is None or len(recent_values) < 10:
             return "Stabil"
         avg = sum(recent_values) / len(recent_values)
+        if avg == 0:
+            return "Stabil"
         delta = current - avg
         if delta > avg * 0.15:
             return "Steigend"

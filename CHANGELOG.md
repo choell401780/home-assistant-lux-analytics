@@ -7,6 +7,48 @@ Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [0.3.0] – 2026-06-22
+
+### HACS-Readiness & Plug-and-Play Dashboard
+
+#### HACS-Korrekturen
+- `manifest.json`: Leere Arrays `requirements` und `dependencies` entfernt (HACS-Validation-Warnung behoben)
+- `release.yml`: Robuster Release-Workflow — VERSION-File vs. Tag-Prüfung, Fallback-Release-Notes, korrektes Body-Path-Handling
+- Vollständige HACS-Readiness-Prüfung dokumentiert und alle Punkte adressiert
+
+#### Architektur: Ein Sensor pro Config Entry
+- `config_flow.py`: Umgebaut auf **einen Source-Sensor** pro Config Entry + optionalem Label
+- Config Entry erhält `unique_id` = `lux_analytics_{source_sensor}` → verhindert doppelte Einträge
+- Entry-Titel: "Lux Analytics – {Label}" oder "Lux Analytics ({sensor_name})"
+- `CONF_SOURCE_SENSOR` und `CONF_SENSOR_LABEL` ersetzen altes `CONF_AUTO_DISCOVER` + `CONF_SENSORS`
+- `coordinator.py`: Vereinfacht auf single-source — `source_entity_id` statt `sensor_ids` Liste
+- `discover_illuminance_sensors()` als eigenständige Modul-Funktion (wiederverwendbar)
+
+#### Plug-and-Play Dashboard
+- `sensor.py`: `self.entity_id` wird direkt gesetzt → **vorhersagbare Entity-IDs**
+- Schema ohne Label: `sensor.lux_analytics_aktuelle_helligkeit` (Dashboard funktioniert sofort)
+- Schema mit Label "garten": `sensor.lux_analytics_garten_aktuelle_helligkeit`
+- `build_entity_id()` Hilfsfunktion in `const.py` zentralisiert die ID-Logik
+- `ENTITY_ID_SLUGS` Mapping: sensor_key → deutschen Slug
+- Dashboard-YAML muss **nicht mehr bearbeitet werden** nach der Installation
+
+#### Config Flow Verbesserungen
+- Sensor-Dropdown mit `custom_value=True` → manuelle Eingabe wenn Sensor nicht erkannt
+- `NumberSelector` für Schwellwert und Intervall (statt freies Textfeld)
+- Options Flow zeigt Hinweis, dass Source-Sensor nicht änderbar ist
+- Beschreibung im Config Flow zeigt Beispiel-Entity-ID
+
+#### Translations
+- `strings.json`, `de.json`, `en.json`: Neue Felder `source_sensor` und `sensor_label`
+- `abort.already_configured` Nachricht für doppelte Sensor-Einträge
+
+### Migration von v0.2.0
+Da v0.2.0 mehrere Sensoren pro Entry erlaubte, muss nach dem Update die Integration
+neu eingerichtet werden: Integration entfernen → neu hinzufügen → einen Sensor wählen.
+Pro zusätzlichem Sensor eine weitere Integration-Instanz hinzufügen.
+
+---
+
 ## [0.2.0] – 2026-06-22
 
 ### Architektur

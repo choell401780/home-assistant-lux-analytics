@@ -9,9 +9,8 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .const import (
-    CONF_AUTO_DISCOVER,
     CONF_BRIGHT_THRESHOLD,
-    CONF_SENSORS,
+    CONF_SOURCE_SENSOR,
     CONF_UPDATE_INTERVAL,
     DEFAULT_BRIGHT_THRESHOLD,
     DEFAULT_UPDATE_INTERVAL,
@@ -28,26 +27,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Lux Analytics from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    auto_discover = entry.data.get(CONF_AUTO_DISCOVER, True)
-    configured_sensors = entry.data.get(CONF_SENSORS, [])
-    bright_threshold = entry.data.get(CONF_BRIGHT_THRESHOLD, DEFAULT_BRIGHT_THRESHOLD)
-    update_interval = entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
+    source_sensor = entry.data.get(CONF_SOURCE_SENSOR, "")
+    bright_threshold = entry.options.get(
+        CONF_BRIGHT_THRESHOLD,
+        entry.data.get(CONF_BRIGHT_THRESHOLD, DEFAULT_BRIGHT_THRESHOLD),
+    )
+    update_interval = entry.options.get(
+        CONF_UPDATE_INTERVAL,
+        entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
+    )
+
+    if not source_sensor:
+        _LOGGER.error("Lux Analytics: no source sensor configured in entry %s", entry.entry_id)
+        return False
 
     coordinator = LuxAnalyticsCoordinator(
         hass,
-        sensor_ids=[],
+        source_entity_id=source_sensor,
         bright_threshold=bright_threshold,
         update_interval=update_interval,
     )
-
-    if auto_discover:
-        sensor_ids = coordinator.discover_illuminance_sensors()
-        _LOGGER.info("Lux Analytics auto-discovered %d sensors: %s", len(sensor_ids), sensor_ids)
-    else:
-        sensor_ids = configured_sensors
-        _LOGGER.info("Lux Analytics using %d configured sensors", len(sensor_ids))
-
-    coordinator.sensor_ids = sensor_ids
 
     await coordinator.async_config_entry_first_refresh()
 
@@ -57,6 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    _LOGGER.info("Lux Analytics set up for sensor: %s", source_sensor)
     return True
 
 

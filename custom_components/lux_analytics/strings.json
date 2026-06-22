@@ -3,11 +3,11 @@
     "step": {
       "user": {
         "title": "Lux Analytics einrichten",
-        "description": "{discovered} Helligkeitssensoren wurden automatisch erkannt.",
+        "description": "{discovered} Helligkeitssensoren wurden erkannt. Wähle einen aus und vergib optional eine Bezeichnung (z. B. 'Garten'). Die Entitäten erhalten dann die ID `{example_id}`.",
         "data": {
-          "auto_discover": "Sensoren automatisch erkennen",
-          "sensors": "Sensoren manuell auswählen",
-          "bright_threshold": "Helligkeitsschwelle für helle Stunden (lx)",
+          "source_sensor": "Helligkeitssensor",
+          "sensor_label": "Bezeichnung (optional, z. B. Garten)",
+          "bright_threshold": "Helligkeitsschwelle helle Stunden (lx)",
           "update_interval": "Aktualisierungsintervall (Sekunden)"
         }
       }
@@ -18,8 +18,7 @@
       "init": {
         "title": "Lux Analytics konfigurieren",
         "data": {
-          "sensors": "Sensoren auswählen",
-          "bright_threshold": "Helligkeitsschwelle für helle Stunden (lx)",
+          "bright_threshold": "Helligkeitsschwelle helle Stunden (lx)",
           "update_interval": "Aktualisierungsintervall (Sekunden)"
         }
       }
