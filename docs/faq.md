@@ -78,4 +78,4 @@ A: Ja – die Architektur ist bereits dafür vorbereitet. Geplant für künftige
 - PV-Optimierung
 - Sonnenstundenberechnung
 
-Feedback und Feature-Requests: [GitHub Issues](https://github.com/choell/home-assistant-lux-analytics/issues)
+Feedback und Feature-Requests: [GitHub Issues](https://github.com/choell401780/home-assistant-lux-analytics/issues)

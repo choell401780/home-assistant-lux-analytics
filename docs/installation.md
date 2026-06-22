@@ -20,7 +20,7 @@ SSH, Samba-Freigaben oder manuelles Kopieren von Dateien sind **nicht erforderli
 3. Oben rechts: drei Punkte (⋮) → **Benutzerdefinierte Repositories**
 4. URL eingeben:
    ```
-   https://github.com/choell/home-assistant-lux-analytics
+   https://github.com/choell401780/home-assistant-lux-analytics
    ```
 5. Kategorie: **Integration** auswählen
 6. **Hinzufügen** klicken
