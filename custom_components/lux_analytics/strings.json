@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lux Analytics einrichten",
+        "description": "{discovered} Helligkeitssensoren wurden automatisch erkannt.",
+        "data": {
+          "auto_discover": "Sensoren automatisch erkennen",
+          "sensors": "Sensoren manuell auswählen",
+          "bright_threshold": "Helligkeitsschwelle für helle Stunden (lx)",
+          "update_interval": "Aktualisierungsintervall (Sekunden)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Lux Analytics konfigurieren",
+        "data": {
+          "sensors": "Sensoren auswählen",
+          "bright_threshold": "Helligkeitsschwelle für helle Stunden (lx)",
+          "update_interval": "Aktualisierungsintervall (Sekunden)"
+        }
+      }
+    }
+  }
+}

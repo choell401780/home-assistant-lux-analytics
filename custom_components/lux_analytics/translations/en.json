@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Lux Analytics",
+        "description": "{discovered} illuminance sensors were auto-discovered.",
+        "data": {
+          "auto_discover": "Auto-discover sensors",
+          "sensors": "Manually select sensors",
+          "bright_threshold": "Bright-hours threshold (lx)",
+          "update_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Lux Analytics",
+        "data": {
+          "sensors": "Select sensors",
+          "bright_threshold": "Bright-hours threshold (lx)",
+          "update_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,199 @@
+##############################################################################
+# Lux Analytics Dashboard – v0.1.0
+# Kompatibel mit Home Assistant Lovelace (YAML-Modus oder UI-Import)
+#
+# Anpassung: Ersetze "sensor.DEIN_SENSOR_NAME" durch deine tatsächlichen
+# Sensor-Entity-IDs, die Lux Analytics erzeugt hat.
+##############################################################################
+
+title: Lux Analytics
+views:
+  - title: Übersicht
+    path: lux-uebersicht
+    icon: mdi:white-balance-sunny
+    badges: []
+    cards:
+      # ─── Kopfzeile: Sensor-Status ───────────────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: glance
+            title: Aktuelle Helligkeit
+            entities:
+              - entity: sensor.lux_analytics_aktuelle_helligkeit
+                name: Lux
+            show_name: true
+            show_icon: true
+            show_state: true
+          - type: glance
+            title: Status
+            entities:
+              - entity: sensor.lux_analytics_helligkeitsstatus
+                name: Klasse
+            show_name: true
+            show_icon: true
+            show_state: true
+          - type: glance
+            title: Trend
+            entities:
+              - entity: sensor.lux_analytics_helligkeitstrend
+                name: Trend
+            show_name: true
+            show_icon: true
+            show_state: true
+          - type: glance
+            title: Sonnenindex
+            entities:
+              - entity: sensor.lux_analytics_sonnenindex
+                name: Index
+            show_name: true
+            show_icon: true
+            show_state: true
+
+      # ─── Update-Hinweis ─────────────────────────────────────────────────
+      - type: conditional
+        conditions:
+          - entity: sensor.lux_analytics_update
+            state: "Update verfügbar"
+        card:
+          type: markdown
+          content: >
+            ## 🔔 Update verfügbar!
+            Eine neue Version von **Lux Analytics** ist verfügbar.
+            Bitte über HACS oder GitHub aktualisieren.
+
+      # ─── Tagesansicht ───────────────────────────────────────────────────
+      - type: vertical-stack
+        title: Tagesansicht
+        cards:
+          - type: history-graph
+            title: Helligkeit heute (24h)
+            hours_to_show: 24
+            entities:
+              - entity: sensor.lux_analytics_aktuelle_helligkeit
+                name: Helligkeit
+          - type: horizontal-stack
+            cards:
+              - type: entity
+                entity: sensor.lux_analytics_tagesminimum
+                name: Min
+                icon: mdi:arrow-down
+              - type: entity
+                entity: sensor.lux_analytics_tagesmaximum
+                name: Max
+                icon: mdi:arrow-up
+              - type: entity
+                entity: sensor.lux_analytics_tagesdurchschnitt
+                name: Ø
+                icon: mdi:calculator-variant
+              - type: entity
+                entity: sensor.lux_analytics_helle_stunden_heute
+                name: Helle Std.
+                icon: mdi:clock-time-eight
+
+      # ─── Wochenansicht ──────────────────────────────────────────────────
+      - type: vertical-stack
+        title: Wochenansicht
+        cards:
+          - type: history-graph
+            title: Verlauf letzte 7 Tage
+            hours_to_show: 168
+            entities:
+              - entity: sensor.lux_analytics_aktuelle_helligkeit
+                name: Helligkeit
+          - type: horizontal-stack
+            cards:
+              - type: entity
+                entity: sensor.lux_analytics_wochenminimum
+                name: Woche Min
+                icon: mdi:arrow-down
+              - type: entity
+                entity: sensor.lux_analytics_wochenmaximum
+                name: Woche Max
+                icon: mdi:arrow-up
+              - type: entity
+                entity: sensor.lux_analytics_wochendurchschnitt
+                name: Woche Ø
+                icon: mdi:calculator-variant
+              - type: entity
+                entity: sensor.lux_analytics_helle_stunden_woche
+                name: Helle Std.
+                icon: mdi:clock-time-eight
+
+      # ─── Monatsansicht ──────────────────────────────────────────────────
+      - type: vertical-stack
+        title: Monatsansicht
+        cards:
+          - type: history-graph
+            title: Verlauf letzte 30 Tage
+            hours_to_show: 720
+            entities:
+              - entity: sensor.lux_analytics_aktuelle_helligkeit
+                name: Helligkeit
+          - type: horizontal-stack
+            cards:
+              - type: entity
+                entity: sensor.lux_analytics_monatsminimum
+                name: Monat Min
+              - type: entity
+                entity: sensor.lux_analytics_monatsmaximum
+                name: Monat Max
+              - type: entity
+                entity: sensor.lux_analytics_monatsdurchschnitt
+                name: Monat Ø
+              - type: entity
+                entity: sensor.lux_analytics_helle_stunden_monat
+                name: Helle Std.
+
+      # ─── Durchschnitts-Vergleich ─────────────────────────────────────────
+      - type: entities
+        title: Durchschnittswerte im Vergleich
+        entities:
+          - entity: sensor.lux_analytics_durchschnitt_24h
+            name: Letzte 24 Stunden
+            icon: mdi:chart-line
+          - entity: sensor.lux_analytics_durchschnitt_7_tage
+            name: Letzte 7 Tage
+            icon: mdi:chart-line
+          - entity: sensor.lux_analytics_durchschnitt_30_tage
+            name: Letzte 30 Tage
+            icon: mdi:chart-line
+
+      # ─── System / Version ────────────────────────────────────────────────
+      - type: entities
+        title: System
+        entities:
+          - entity: sensor.lux_analytics_update
+            name: Update-Status
+            icon: mdi:update
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - title: Statistiken
+    path: lux-statistiken
+    icon: mdi:chart-bar
+    badges: []
+    cards:
+      - type: statistics-graph
+        title: Tagesstatistik (letzter Monat)
+        period:
+          calendar:
+            period: month
+        stat_types:
+          - mean
+          - min
+          - max
+        entities:
+          - entity: sensor.lux_analytics_aktuelle_helligkeit
+            name: Helligkeit
+
+      - type: statistics-graph
+        title: Wochenstatistik
+        period:
+          calendar:
+            period: week
+        stat_types:
+          - mean
+          - min
+          - max
+        entities:
+          - entity: sensor.lux_analytics_aktuelle_helligkeit
+            name: Helligkeit

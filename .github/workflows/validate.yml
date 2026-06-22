@@ -1,0 +1,49 @@
+name: Validate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Syntax check
+        run: |
+          python3 -m py_compile custom_components/lux_analytics/__init__.py
+          python3 -m py_compile custom_components/lux_analytics/const.py
+          python3 -m py_compile custom_components/lux_analytics/coordinator.py
+          python3 -m py_compile custom_components/lux_analytics/sensor.py
+          python3 -m py_compile custom_components/lux_analytics/config_flow.py
+
+      - name: Validate manifest.json
+        run: python3 -c "import json; json.load(open('custom_components/lux_analytics/manifest.json'))"
+
+      - name: Validate hacs.json
+        run: python3 -c "import json; json.load(open('hacs.json'))"
+
+      - name: Validate translations
+        run: |
+          python3 -c "import json; json.load(open('custom_components/lux_analytics/translations/de.json'))"
+          python3 -c "import json; json.load(open('custom_components/lux_analytics/translations/en.json'))"
+
+      - name: Check version consistency
+        run: |
+          FILE_VERSION=$(cat VERSION | tr -d '[:space:]')
+          MANIFEST_VERSION=$(python3 -c "import json; print(json.load(open('custom_components/lux_analytics/manifest.json'))['version'])")
+          if [ "$FILE_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "VERSION mismatch: VERSION=$FILE_VERSION, manifest=$MANIFEST_VERSION"
+            exit 1
+          fi
+          echo "Version check passed: $FILE_VERSION"

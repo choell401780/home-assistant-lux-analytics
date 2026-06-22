@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "VERSION=$(cat VERSION | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - name: Read release notes
+        id: notes
+        run: |
+          NOTES_FILE="releases/v${{ steps.version.outputs.VERSION }}/release_notes.md"
+          if [ -f "$NOTES_FILE" ]; then
+            echo "NOTES=$(cat $NOTES_FILE)" >> $GITHUB_OUTPUT
+          else
+            echo "NOTES=Release v${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release archive
+        run: |
+          zip -r lux_analytics_v${{ steps.version.outputs.VERSION }}.zip \
+            custom_components/lux_analytics/ \
+            dashboards/ \
+            README.md \
+            CHANGELOG.md \
+            LICENSE
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Lux Analytics v${{ steps.version.outputs.VERSION }}"
+          body_path: "releases/v${{ steps.version.outputs.VERSION }}/release_notes.md"
+          files: |
+            lux_analytics_v${{ steps.version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
