@@ -6,13 +6,11 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-import aiohttp
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
-from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -20,16 +18,12 @@ from .const import (
     DEFAULT_BRIGHT_THRESHOLD,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
-    GITHUB_REPO,
     ILLUMINANCE_DEVICE_CLASSES,
     ILLUMINANCE_KEYWORDS,
     ILLUMINANCE_UNITS,
-    VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-GITHUB_RELEASES_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 
 def classify_brightness(lux: float) -> str:
@@ -47,7 +41,11 @@ def calculate_sun_index(lux: float) -> float:
 
 
 class LuxAnalyticsCoordinator(DataUpdateCoordinator):
-    """Coordinator fetching lux statistics and github version info."""
+    """Coordinator fetching lux statistics from HA recorder.
+
+    Update notifications are handled natively by HACS — no custom
+    GitHub-API polling needed here.
+    """
 
     def __init__(
         self,
@@ -58,10 +56,6 @@ class LuxAnalyticsCoordinator(DataUpdateCoordinator):
     ) -> None:
         self.sensor_ids = sensor_ids
         self.bright_threshold = bright_threshold
-        self._latest_version: str | None = None
-        self._release_notes: str | None = None
-        self._version_check_interval = timedelta(hours=6)
-        self._last_version_check: datetime | None = None
 
         super().__init__(
             hass,
@@ -69,28 +63,6 @@ class LuxAnalyticsCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=timedelta(seconds=update_interval),
         )
-
-    # ------------------------------------------------------------------
-    # Public helpers
-    # ------------------------------------------------------------------
-
-    @property
-    def installed_version(self) -> str:
-        return VERSION
-
-    @property
-    def latest_version(self) -> str | None:
-        return self._latest_version
-
-    @property
-    def update_available(self) -> bool:
-        if self._latest_version is None:
-            return False
-        return self._latest_version != VERSION
-
-    @property
-    def release_notes(self) -> str | None:
-        return self._release_notes
 
     # ------------------------------------------------------------------
     # Sensor discovery
@@ -125,13 +97,11 @@ class LuxAnalyticsCoordinator(DataUpdateCoordinator):
 
         for entity_id in self.sensor_ids:
             try:
-                sensor_data = await self._fetch_sensor_data(entity_id)
-                data[entity_id] = sensor_data
+                data[entity_id] = await self._fetch_sensor_data(entity_id)
             except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning("Failed to fetch data for %s: %s", entity_id, exc)
                 data[entity_id] = self._empty_sensor_data()
 
-        await self._maybe_check_github_version()
         return data
 
     async def _fetch_sensor_data(self, entity_id: str) -> dict[str, Any]:
@@ -258,28 +228,3 @@ class LuxAnalyticsCoordinator(DataUpdateCoordinator):
             "bright_hours_day", "bright_hours_week", "bright_hours_month",
             "avg_24h", "avg_7d", "avg_30d",
         )}
-
-    # ------------------------------------------------------------------
-    # GitHub version check
-    # ------------------------------------------------------------------
-
-    async def _maybe_check_github_version(self) -> None:
-        now = dt_util.now()
-        if (
-            self._last_version_check is not None
-            and now - self._last_version_check < self._version_check_interval
-        ):
-            return
-        self._last_version_check = now
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    GITHUB_RELEASES_URL, timeout=aiohttp.ClientTimeout(total=10)
-                ) as resp:
-                    if resp.status == 200:
-                        payload = await resp.json()
-                        tag = payload.get("tag_name", "").lstrip("v")
-                        self._latest_version = tag or None
-                        self._release_notes = payload.get("body", "")
-        except Exception as exc:  # noqa: BLE001
-            _LOGGER.debug("GitHub version check failed: %s", exc)

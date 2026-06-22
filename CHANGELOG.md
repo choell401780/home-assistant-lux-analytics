@@ -7,6 +7,32 @@ Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [0.2.0] – 2026-06-22
+
+### Architektur
+- **Entfernt**: Eigene GitHub-API-Update-Prüfung – vollständig durch HACS ersetzt
+- **Entfernt**: `UpdateAvailableSensor` – HACS liefert native Update-Entität
+- **Entfernt**: `GITHUB_REPO`-Konstante und `GITHUB_RELEASES_URL` (nicht mehr benötigt)
+- **Entfernt**: `aiohttp`-Import aus Coordinator (keine externen HTTP-Calls mehr)
+- **Entfernt**: Nicht verwendeter `statistics_during_period`-Import
+- **Entfernt**: Nicht verwendeter `UpdateFailed`-Import
+
+### Neu
+- `info.md` für HACS-Store-Anzeige
+- HACS-Validierungs-Job in GitHub Actions CI (`hacs/action`)
+
+### Geändert
+- Dashboard: Update-Sensor-Karte entfernt (Update-Hinweise kommen von HACS)
+- Dokumentation: Installation und Update-Anleitung auf HACS-only umgeschrieben
+- Coordinator: vereinfacht und bereinigt (keine GitHub-Netzwerk-Calls)
+
+### Migration von v0.1.0
+Kein manueller Eingriff nötig. HACS installiert die neue Version automatisch.
+Der `sensor.lux_analytics_update`-Sensor wird nach dem Update und HA-Neustart
+automatisch entfernt.
+
+---
+
 ## [0.1.0] – 2026-06-22
 
 ### Neu

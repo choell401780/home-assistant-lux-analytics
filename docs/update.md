@@ -1,62 +1,68 @@
 # Update-Anleitung – Lux Analytics
 
-## Automatische Update-Erkennung
+## Updates über HACS
 
-Lux Analytics prüft alle 6 Stunden, ob auf GitHub eine neue Version verfügbar ist.
+Lux Analytics-Updates werden vollständig über HACS verwaltet.
+**Kein manueller Eingriff ins Dateisystem erforderlich.**
 
-### Update-Status prüfen
+### Update-Erkennung
 
-Der Sensor `sensor.lux_analytics_update` zeigt:
-- `Aktuell` – die neueste Version ist installiert
-- `Update verfügbar` – eine neue Version wurde auf GitHub veröffentlicht
+HACS überwacht automatisch das GitHub-Repository und vergleicht:
+- Die installierte Version (aus `manifest.json`)
+- Die neueste verfügbare Version (aus GitHub Releases)
 
-Attribute des Sensors:
-- `installed_version` – aktuell installierte Version
-- `latest_version` – neueste verfügbare Version auf GitHub
-- `release_notes` – Änderungsprotokoll der neuen Version
-- `update_available` – `true` / `false`
+Wenn eine neue Version veröffentlicht wird, erscheint:
+1. Ein Benachrichtigungs-Badge auf dem HACS-Symbol in der Seitenleiste
+2. Eine Update-Karte unter **HACS** → **Integrationen**
+3. Ein Hinweis in der Home Assistant Benachrichtigungsleiste (über die native HA Update-Integration)
 
----
+### Update durchführen
 
-## Update über HACS (empfohlen)
-
-1. HACS öffnen → **Integrationen**
-2. **Lux Analytics** suchen
+1. **HACS** → **Integrationen** öffnen
+2. **Lux Analytics** in der Liste der verfügbaren Updates suchen
 3. **Aktualisieren** klicken
-4. Home Assistant neu starten
+4. Änderungen bestätigen
+5. Home Assistant neu starten
 
 ---
 
-## Manuelles Update
+## Automatische Benachrichtigung einrichten
 
-1. Neuste Version von GitHub herunterladen
-2. Ordner `custom_components/lux_analytics/` ersetzen
-3. Home Assistant neu starten
-
----
-
-## Benachrichtigung bei Updates einrichten
-
-Automation für automatische Benachrichtigung:
+Um per HA-Benachrichtigung über Updates informiert zu werden:
 
 ```yaml
 automation:
-  - alias: "Lux Analytics Update verfügbar"
+  - alias: "HACS Update verfügbar"
     trigger:
       - platform: state
-        entity_id: sensor.lux_analytics_update
-        to: "Update verfügbar"
+        entity_id: sensor.hacs
+        attribute: repositories
+    condition:
+      - condition: template
+        value_template: >
+          {{ state_attr('sensor.hacs', 'repositories') | selectattr('display_name', 'eq', 'Lux Analytics') | list | count > 0 }}
     action:
       - service: notify.notify
         data:
           title: "Lux Analytics Update"
-          message: >
-            Version {{ state_attr('sensor.lux_analytics_update', 'latest_version') }}
-            ist verfügbar. Installiert: {{ state_attr('sensor.lux_analytics_update', 'installed_version') }}
+          message: "Eine neue Version von Lux Analytics ist in HACS verfügbar."
 ```
 
 ---
 
-## Versionsverlauf
+## Warum kein eigener Update-Sensor?
+
+Ab v0.2.0 wurde die eigene GitHub-API-Update-Prüfung **vollständig entfernt**.
+
+**Begründung:**
+- HACS übernimmt exakt diese Aufgabe nativ und zuverlässiger
+- HACS liefert eine HA-native Update-Entity für jede verwaltete Integration
+- Eigene GitHub-API-Abfragen erzeugen unnötigen Netzwerkverkehr
+- Die HACS-Update-Anzeige ist in die Standard-HA-Oberfläche integriert
+- Kein redundanter Code, weniger Wartungsaufwand
+
+---
+
+## Versionshistorie
 
 Siehe [CHANGELOG.md](../CHANGELOG.md)

@@ -1,7 +1,7 @@
 {
   "domain": "lux_analytics",
   "name": "Lux Analytics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "documentation": "https://github.com/choell/home-assistant-lux-analytics",
   "issue_tracker": "https://github.com/choell/home-assistant-lux-analytics/issues",
   "codeowners": ["@choell"],

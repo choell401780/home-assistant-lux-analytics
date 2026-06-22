@@ -11,7 +11,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfIlluminance
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -38,7 +37,6 @@ async def async_setup_entry(
             entities.append(
                 LuxSensorEntity(coordinator, config_entry, source_entity_id, safe_id, sensor_key)
             )
-        entities.append(UpdateAvailableSensor(coordinator, config_entry))
 
     async_add_entities(entities, True)
 
@@ -87,38 +85,3 @@ class LuxSensorEntity(CoordinatorEntity[LuxAnalyticsCoordinator], SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"source_entity": self._source_entity_id}
-
-
-class UpdateAvailableSensor(CoordinatorEntity[LuxAnalyticsCoordinator], SensorEntity):
-    """Sensor showing installed vs. latest version."""
-
-    def __init__(
-        self,
-        coordinator: LuxAnalyticsCoordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{config_entry.entry_id}_update_available"
-        self._attr_name = "Lux Analytics Update"
-        self._attr_icon = "mdi:update"
-        self._attr_device_info = DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, config_entry.entry_id)},
-            name="Lux Analytics",
-            manufacturer="Home Assistant Lux Analytics",
-            model="Update Checker",
-            sw_version=VERSION,
-        )
-
-    @property
-    def native_value(self) -> str:
-        return "Update verfügbar" if self.coordinator.update_available else "Aktuell"
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        return {
-            "installed_version": self.coordinator.installed_version,
-            "latest_version": self.coordinator.latest_version,
-            "release_notes": self.coordinator.release_notes,
-            "update_available": self.coordinator.update_available,
-        }

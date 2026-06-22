@@ -1,8 +1,7 @@
 """Constants for Lux Analytics."""
 
 DOMAIN = "lux_analytics"
-VERSION = "0.1.0"
-GITHUB_REPO = "choell/home-assistant-lux-analytics"
+VERSION = "0.2.0"
 
 CONF_SENSORS = "sensors"
 CONF_AUTO_DISCOVER = "auto_discover"

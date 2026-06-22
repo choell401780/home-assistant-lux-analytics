@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  validate:
-    name: Validate Integration
+  validate-python:
+    name: Python Syntax & Consistency
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,16 +27,13 @@ jobs:
           python3 -m py_compile custom_components/lux_analytics/sensor.py
           python3 -m py_compile custom_components/lux_analytics/config_flow.py
 
-      - name: Validate manifest.json
-        run: python3 -c "import json; json.load(open('custom_components/lux_analytics/manifest.json'))"
-
-      - name: Validate hacs.json
-        run: python3 -c "import json; json.load(open('hacs.json'))"
-
-      - name: Validate translations
+      - name: Validate JSON files
         run: |
+          python3 -c "import json; json.load(open('custom_components/lux_analytics/manifest.json'))"
+          python3 -c "import json; json.load(open('hacs.json'))"
           python3 -c "import json; json.load(open('custom_components/lux_analytics/translations/de.json'))"
           python3 -c "import json; json.load(open('custom_components/lux_analytics/translations/en.json'))"
+          python3 -c "import json; json.load(open('custom_components/lux_analytics/strings.json'))"
 
       - name: Check version consistency
         run: |
@@ -47,3 +44,15 @@ jobs:
             exit 1
           fi
           echo "Version check passed: $FILE_VERSION"
+
+  validate-hacs:
+    name: HACS Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: HACS Action
+        uses: hacs/action@main
+        with:
+          category: integration

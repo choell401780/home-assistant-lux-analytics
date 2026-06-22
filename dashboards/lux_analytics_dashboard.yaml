@@ -1,9 +1,11 @@
 ##############################################################################
-# Lux Analytics Dashboard – v0.1.0
+# Lux Analytics Dashboard – v0.2.0
 # Kompatibel mit Home Assistant Lovelace (YAML-Modus oder UI-Import)
 #
 # Anpassung: Ersetze "sensor.DEIN_SENSOR_NAME" durch deine tatsächlichen
 # Sensor-Entity-IDs, die Lux Analytics erzeugt hat.
+#
+# Update-Hinweise erscheinen automatisch über HACS – kein eigener Sensor nötig.
 ##############################################################################
 
 title: Lux Analytics
@@ -48,18 +50,6 @@ views:
             show_name: true
             show_icon: true
             show_state: true
-
-      # ─── Update-Hinweis ─────────────────────────────────────────────────
-      - type: conditional
-        conditions:
-          - entity: sensor.lux_analytics_update
-            state: "Update verfügbar"
-        card:
-          type: markdown
-          content: >
-            ## 🔔 Update verfügbar!
-            Eine neue Version von **Lux Analytics** ist verfügbar.
-            Bitte über HACS oder GitHub aktualisieren.
 
       # ─── Tagesansicht ───────────────────────────────────────────────────
       - type: vertical-stack
@@ -157,14 +147,6 @@ views:
           - entity: sensor.lux_analytics_durchschnitt_30_tage
             name: Letzte 30 Tage
             icon: mdi:chart-line
-
-      # ─── System / Version ────────────────────────────────────────────────
-      - type: entities
-        title: System
-        entities:
-          - entity: sensor.lux_analytics_update
-            name: Update-Status
-            icon: mdi:update
 
   # ────────────────────────────────────────────────────────────────────────────
   - title: Statistiken
