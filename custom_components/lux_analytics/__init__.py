@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -21,6 +22,45 @@ from .coordinator import LuxAnalyticsCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR]
+
+_CARD_URL = "/lux-analytics/lux-analytics-card.js"
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register the JS card as a static file and Lovelace resource."""
+    hass.http.register_static_path(
+        "/lux-analytics",
+        str(Path(__file__).parent / "www"),
+        cache_headers=False,
+    )
+
+    async def _register_resource(event=None) -> None:
+        try:
+            lovelace = hass.data.get("lovelace")
+            if lovelace is None:
+                _LOGGER.debug("Lux Analytics: lovelace not in hass.data, skipping resource registration")
+                return
+
+            resources = (
+                lovelace.get("resources")
+                if isinstance(lovelace, dict)
+                else getattr(lovelace, "resources", None)
+            )
+            if resources is None:
+                _LOGGER.debug("Lux Analytics: Lovelace resources unavailable (YAML mode?)")
+                return
+
+            for item in resources.async_items():
+                if item.get("url") == _CARD_URL:
+                    return  # already registered
+
+            await resources.async_create_item({"res_type": "module", "url": _CARD_URL})
+            _LOGGER.info("Lux Analytics: Lovelace card resource registered (%s)", _CARD_URL)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("Lux Analytics: could not register Lovelace resource: %s", err)
+
+    hass.bus.async_listen_once("homeassistant_started", _register_resource)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

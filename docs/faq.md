@@ -42,9 +42,13 @@ A: Den Schwellwert in der Integrationskonfiguration anpassen. Für Sonnenstunden
 
 ## Dashboard
 
-**F: Das Dashboard zeigt keine Daten.**
+**F: Die Lux Analytics Card zeigt keine Daten.**
 
-A: Die Entity-IDs im Dashboard müssen mit den tatsächlich erzeugten Entitäten übereinstimmen. Echte IDs über **Entwicklertools** → **Zustände** ermitteln.
+A: Sicherstellen, dass die Integration konfiguriert ist (**Einstellungen → Geräte & Dienste → Lux Analytics**) und mindestens ein Sensor ausgewählt wurde. Nach der Erstinstallation benötigt die Integration einige Stunden, um Verlaufsdaten zu berechnen – aktuelle Werte erscheinen sofort.
+
+**F: Die Lux Analytics Card erscheint nicht im "Karte hinzufügen"-Dialog.**
+
+A: Home Assistant einmal neu starten – die Lovelace-Ressource wird beim ersten Start automatisch registriert. Bei Lovelace im YAML-Modus muss die Ressource manuell in der `configuration.yaml` eingetragen werden (siehe [Installationsanleitung](installation.md)).
 
 ---
 

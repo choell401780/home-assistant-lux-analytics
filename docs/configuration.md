@@ -29,7 +29,7 @@ Die Bezeichnung bestimmt das Prefix der Entity-IDs.
 
 **Empfehlung:**
 - Ersten Sensor: Bezeichnung leer lassen → Dashboard funktioniert sofort
-- Weitere Sensoren: aussagekräftige ASCII-Bezeichnung wählen (keine Umlaute bis v0.4.0)
+- Weitere Sensoren: beliebige Bezeichnung wählen – Umlaute werden automatisch normalisiert (ä→ae, ö→oe, ü→ue)
 
 ### Schritt 4: Helligkeitsschwelle
 
@@ -81,7 +81,7 @@ Pro Sensor eine separate Integration-Instanz:
 3. Separate Statistik-Sensoren werden erstellt
 
 Der erste Sensor (ohne Bezeichnung) funktioniert mit dem Standard-Dashboard.
-Für weitere Sensoren das Dashboard duplizieren und Entity-IDs anpassen.
+Für weitere Sensoren einfach eine weitere Lux Analytics Karte im Dashboard hinzufügen und die Instanz im Card-Editor auswählen.
 
 ---
 

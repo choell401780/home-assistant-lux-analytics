@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 DOMAIN = "lux_analytics"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 CONF_SOURCE_SENSOR = "source_sensor"
 CONF_SENSOR_LABEL = "sensor_label"
@@ -81,15 +81,31 @@ ILLUMINANCE_UNITS = ["lx", "lux"]
 ILLUMINANCE_KEYWORDS = ["lux", "illuminance", "brightness", "light", "helligkeit", "hell", "slo"]
 
 
+def _normalize_label(label: str) -> str:
+    """Convert a user label to a safe ASCII slug (handles German umlauts)."""
+    label = label.strip().lower()
+    label = (
+        label.replace("ä", "ae")
+        .replace("ö", "oe")
+        .replace("ü", "ue")
+        .replace("ß", "ss")
+        .replace("Ä", "ae")
+        .replace("Ö", "oe")
+        .replace("Ü", "ue")
+    )
+    return re.sub(r"[^a-z0-9]+", "_", label).strip("_")
+
+
 def build_entity_id(sensor_key: str, label: str = "") -> str:
     """Return a predictable sensor entity_id for a given key and optional label.
 
-    No label  → sensor.lux_analytics_aktuelle_helligkeit
-    label="garten" → sensor.lux_analytics_garten_aktuelle_helligkeit
+    No label          → sensor.lux_analytics_aktuelle_helligkeit
+    label="Garten"    → sensor.lux_analytics_garten_aktuelle_helligkeit
+    label="Süd Pool"  → sensor.lux_analytics_sued_pool_aktuelle_helligkeit
     """
     slug = ENTITY_ID_SLUGS.get(sensor_key, sensor_key)
     if label:
-        safe_label = re.sub(r"[^a-z0-9]+", "_", label.strip().lower()).strip("_")
+        safe_label = _normalize_label(label)
         if safe_label:
             return f"sensor.{DOMAIN}_{safe_label}_{slug}"
     return f"sensor.{DOMAIN}_{slug}"

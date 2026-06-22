@@ -7,6 +7,42 @@ Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [0.4.0] – 2026-06-22
+
+### Custom Lovelace Card – Plug-and-Play ohne YAML
+
+#### Neue Lovelace Card (lux-analytics-card)
+- **Automatische Installation**: Card wird als Lovelace-Ressource beim ersten HA-Start registriert
+- **"Karte hinzufügen"**: Card erscheint im UI-Kartenpicker ohne jede YAML-Konfiguration
+- **Auto-Discovery**: Card findet lux_analytics-Instanzen selbstständig
+- **GUI-Editor**: Bei mehreren Instanzen Dropdown-Auswahl im Card-Konfigurationsdialog
+- **Shadow DOM**: Vollständige Style-Isolation, kein CSS-Konflikt mit HA-Themes
+- **HA-Theming**: Nutzt HA CSS-Variablen – funktioniert mit Light/Dark Mode automatisch
+
+#### Card-Inhalt (alle Werte live)
+- Aktueller Lux-Wert (Hero-Display, kompakt formatiert: k-Notation ab 10.000 lx)
+- Helligkeitsstatus als Farbige Badge (8 Klassen, kontrastgerecht)
+- Trend-Pfeil (↑/↓/→) in kontrastierender Farbe
+- Sonnenindex-Balken mit Farbgradient (blau→orange→rot)
+- Tages-Min/Max/Durchschnitt als 3-spaltige Stat-Grid
+- Rollierende Durchschnitte (24h / 7 Tage / 30 Tage)
+- Helle Stunden heute und diese Woche
+- Wochen- und Monatsdurchschnitt als Footer
+
+#### Technische Umsetzung
+- `custom_components/lux_analytics/www/lux-analytics-card.js` – Self-contained JS Card
+- `async_setup()` in `__init__.py` registriert statischen Pfad `/lux-analytics/`
+- Lovelace-Ressource wird beim Event `homeassistant_started` automatisch eingetragen
+- Fallback: bei YAML-Lovelace-Modus wird Registrierung übersprungen (kein Fehler)
+- `window.customCards` Eintrag für HA-Kartenpicker mit Vorschau-Flag
+
+#### Umlaut-Normalisierung (Labels)
+- `build_entity_id()` konvertiert Umlaute: ä→ae, ö→oe, ü→ue, ß→ss
+- Label "Süd-Pool" erzeugt jetzt `sensor.lux_analytics_sued_pool_aktuelle_helligkeit`
+- Keine manuellen ASCII-Umbenennungen mehr nötig
+
+---
+
 ## [0.3.0] – 2026-06-22
 
 ### HACS-Readiness & Plug-and-Play Dashboard

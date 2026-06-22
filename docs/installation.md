@@ -8,10 +8,10 @@
 
 ---
 
-## Installation über HACS (einzige unterstützte Methode)
+## Installation (vollständig über HACS)
 
 Lux Analytics wird ausschließlich über HACS installiert.
-SSH, Samba-Freigaben oder manuelles Kopieren von Dateien sind **nicht erforderlich**.
+SSH, Samba, Dateieditor oder manuelles Kopieren von Dateien sind **nicht erforderlich**.
 
 ### Schritt 1: Repository in HACS hinzufügen
 
@@ -31,45 +31,33 @@ SSH, Samba-Freigaben oder manuelles Kopieren von Dateien sind **nicht erforderli
 2. Karte anklicken → **Herunterladen** → Version bestätigen
 3. Home Assistant neu starten
 
-### Schritt 3: Integration einrichten
+### Schritt 3: Sensor einrichten
 
-1. **Einstellungen** → **Geräte & Dienste** → **Integration hinzufügen**
+1. **Einstellungen → Geräte & Dienste → Integration hinzufügen**
 2. Nach **Lux Analytics** suchen und auswählen
-3. Konfigurationsassistenten folgen:
-   - Sensoren automatisch erkennen lassen **oder** manuell auswählen
-   - Helligkeitsschwelle für helle Stunden festlegen (Standard: 1000 lx)
-   - Aktualisierungsintervall wählen (Standard: 5 Minuten)
-4. **Bestätigen** → Integration ist aktiv
+3. Helligkeitssensor aus Dropdown wählen
+4. Optional: Name vergeben (z. B. Garten, Pool, Terrasse)
+5. **Bestätigen** – fertig
 
 ---
 
-## Dashboard einrichten (optional)
+## Dashboard einrichten (kein YAML nötig)
 
-### Methode A: Als eigenes Dashboard
+Nach der Installation erscheint **Lux Analytics** automatisch im Lovelace-Kartenpicker.
 
-1. Datei `dashboards/lux_analytics_dashboard.yaml` aus dem HACS-Download-Verzeichnis
-   in das HA-Konfigurationsverzeichnis kopieren — **oder** aus dem GitHub-Repository
-   herunterladen und per Datei-Editor in HA hochladen.
+### Karte hinzufügen
 
-2. In `configuration.yaml` eintragen:
+1. Ein Dashboard öffnen und in den **Bearbeitungsmodus** wechseln
+2. **Karte hinzufügen** klicken
+3. Im Suchfeld **Lux Analytics** eingeben
+4. **Lux Analytics** Card auswählen → **Hinzufügen**
 
-   ```yaml
-   lovelace:
-     mode: yaml
-     dashboards:
-       lux-analytics:
-         mode: yaml
-         filename: lux_analytics_dashboard.yaml
-         title: Lux Analytics
-         icon: mdi:white-balance-sunny
-         show_in_sidebar: true
-   ```
+Die Card zeigt sofort alle Daten des konfigurierten Sensors – ohne YAML, ohne Entity-IDs.
 
-3. HA neu starten oder Lovelace über **Entwicklertools** neu laden.
+### Mehrere Sensoren
 
-### Methode B: Karten in bestehendes Dashboard einfügen
-
-Einzelne Karten aus der Dashboard-YAML-Datei per UI-Editor in ein bestehendes Dashboard kopieren.
+Wenn mehrere Lux Analytics Instanzen konfiguriert sind, erscheint beim Bearbeiten
+der Card ein Dropdown zur Auswahl der gewünschten Instanz.
 
 ---
 
@@ -77,19 +65,30 @@ Einzelne Karten aus der Dashboard-YAML-Datei per UI-Editor in ein bestehendes Da
 
 ### Integration erscheint nicht unter "Integration hinzufügen"
 
-- Sicherstellen, dass HA nach der HACS-Installation neu gestartet wurde
-- HACS-Protokoll prüfen: **HACS** → **Protokolle**
-- HA-Protokoll prüfen: **Einstellungen** → **System** → **Protokolle**
+- Sicherstellen, dass HA nach der HACS-Installation **neu gestartet** wurde
+- HACS-Protokoll prüfen: **HACS → Protokolle**
+- HA-Protokoll prüfen: **Einstellungen → System → Protokolle**
+
+### Card erscheint nicht im Kartenpicker
+
+- HA einmal neu starten (Lovelace-Ressource wird beim ersten Start registriert)
+- Sicherstellen, dass Lovelace im **Storage-Modus** läuft (nicht YAML-Modus)
+- Im YAML-Modus: Ressource manuell in `configuration.yaml` eintragen:
+  ```yaml
+  lovelace:
+    resources:
+      - url: /lux-analytics/lux-analytics-card.js
+        type: module
+  ```
 
 ### Keine Sensoren werden erkannt
 
 - Prüfen, ob Helligkeitssensoren in HA vorhanden sind:
-  **Entwicklertools** → **Zustände** → nach `illuminance` filtern
-- Im Integrations-Konfigurationsmenü Sensor manuell hinzufügen:
-  **Einstellungen** → **Geräte & Dienste** → **Lux Analytics** → **Konfigurieren**
+  **Entwicklertools → Zustände** → nach `illuminance` filtern
+- Im Integrations-Konfigurationsmenü Sensor manuell eingeben:
+  **Einstellungen → Geräte & Dienste → Lux Analytics → Konfigurieren**
 
-### Statistiken zeigen "Unbekannt"
+### Statistiken zeigen "—" oder "Unbekannt"
 
-- Der Recorder muss Verlaufsdaten für den Sensor haben
-- Nach Erstinstallation mindestens einige Stunden warten
-- Recorder-Konfiguration prüfen (`recorder:` in configuration.yaml oder Standard-Setup)
+- Nach Erstinstallation mindestens einige Stunden warten (Recorder benötigt Verlaufsdaten)
+- Recorder-Konfiguration prüfen (läuft standardmäßig in HA)
